@@ -18,7 +18,7 @@ const signup = async (req, res) => {
       email,
       password: hashedPassword,
       name,
-      isOtpVerified: false,
+      profileCreated: false,
       isVerified: false,
     });
 
