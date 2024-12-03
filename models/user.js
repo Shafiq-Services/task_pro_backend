@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false, // Admin will change this to true after approval.
   },
-  isOtpVerified: {
+  profileCreated: {
     type: Boolean,
     default: false, // Set to true after user successfully verifies OTP.
   },

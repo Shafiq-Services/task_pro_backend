@@ -5,7 +5,7 @@ const { sendOtp, getOtp } = require('../utils/send_otp');  // Import the utility
 
 // User Sign-Up
 const signup = async (req, res) => {
-  const { email, password, name, phoneNumber } = req.body;
+  const { email, password, name} = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -18,7 +18,6 @@ const signup = async (req, res) => {
       email,
       password: hashedPassword,
       name,
-      phoneNumber,
       isOtpVerified: false,
       isVerified: false,
     });
@@ -31,6 +30,16 @@ const signup = async (req, res) => {
     return res.status(500).json({ message: 'Something went wrong.', error });
   }
 };
+
+const sendOtpAPI = async (req, res) => {
+  const { email } = req.body;
+  try {
+    await sendOtp(email);  // Send OTP using utility function
+    return res.status(200).json({ message: 'OTP sent successfully.' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Something went wrong.', error });
+  }
+}
 
 // Verify OTP
 const verifyOtp = async (req, res) => {
@@ -53,7 +62,7 @@ const verifyOtp = async (req, res) => {
 
     await User.updateOne({ email }, { $set: { isOtpVerified: true } });
 
-    return res.status(200).json({ message: 'OTP verified successfully. Wait for admin verification.' });
+    return res.status(200).json({ message: 'OTP verified successfully' });
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong.', error });
   }
@@ -122,4 +131,4 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { signup, verifyOtp, login, forgotPassword, resetPassword };
+module.exports = { signup, verifyOtp, login, forgotPassword, resetPassword, sendOtpAPI };

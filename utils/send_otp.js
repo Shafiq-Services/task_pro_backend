@@ -25,7 +25,7 @@ const sendOtp = async (email) => {
 
   // Mail options
   const mailOptions = {
-    from: process.env.EMAIL,
+    from: 'Task Pro',
     to: email,
     subject: 'Your OTP for Login Verification',
     text: `Your OTP is: ${otp}. This OTP is valid for 10 minutes.`
