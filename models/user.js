@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   },
   name: {
     type: String,
-    required: true,
+    default: "",
     trim: true
   },
   isVerified: {
