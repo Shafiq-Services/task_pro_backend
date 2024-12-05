@@ -5,7 +5,7 @@ const { sendOtp, getOtp } = require('../utils/send_otp');  // Import the utility
 
 // User Sign-Up
 const signup = async (req, res) => {
-  const { email, password, name} = req.body;
+  const { email, password} = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -17,7 +17,6 @@ const signup = async (req, res) => {
     const user = new User({
       email,
       password: hashedPassword,
-      name,
       profileCreated: false,
       isVerified: false,
     });
