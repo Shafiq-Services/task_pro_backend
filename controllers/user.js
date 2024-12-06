@@ -113,11 +113,6 @@ const login = async (req, res) => {
     if (!isPasswordCorrect) {
       return res.status(400).json({ message: 'Invalid password' });
     }
-    
-    if (!user.isOtpVerified) {
-      await sendOtp(email);  // Re-send OTP if not verified
-      return res.status(400).json({ message: 'Your OTP is not verified yet. A new OTP has been sent to your email.' });
-    }
 
     if (!user.isVerified) {
       return res.status(400).json({ message: 'Your account is awaiting admin approval.' });
