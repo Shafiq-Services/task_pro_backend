@@ -116,15 +116,11 @@ const login = async (req, res) => {
     
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    if (!user.profileCreated) {
-      return res.status(200).json({ message: 'Login successful', profileCreated: user.profileCreated});
+    if (!user.profileCreated || !user.isVerified) {
+      return res.status(200).json({ message: 'Login successful', profileCreated: user.profileCreated, isVerified: user.isVerified});
     }
 
-    if (!user.isVerified) {
-      return res.status(200).json({ message: 'Your account is awaiting admin approval.', profileCreated: user.profileCreated});
-    }
-
-    return res.status(200).json({ message: 'Login successful', profileCreated: user.profileCreated, token });
+    return res.status(200).json({ message: 'Login successful', profileCreated: user.profileCreated, isVerified: user.isVerified, token});
 
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong.', error });
