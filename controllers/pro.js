@@ -1,4 +1,4 @@
-const User = require('../models/user');
+const Pro = require('../models/pro');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendOtp, getOtp } = require('../utils/send_otp');  // Import the utility
@@ -8,23 +8,23 @@ const signup = async (req, res) => {
   const { email, password} = req.body;
 
   try {
-    const userExists = await User.findOne({ email });
+    const userExists = await Pro.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'Email already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({
+    const pro = new Pro({
       email,
       password: hashedPassword,
       profileCreated: false,
       isVerified: false,
     });
 
-    await user.save();
+    await pro.save();
     await sendOtp(email);  // Send OTP using utility function
 
-    return res.status(201).json({ message: 'User registered successfully. Please verify your OTP.' });
+    return res.status(201).json({ message: 'User registered successfully.' });
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong.', error });
   }
@@ -59,7 +59,7 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-    await User.updateOne({ email }, { $set: { isOtpVerified: true } });
+    await Pro.updateOne({ email }, { $set: { isOtpVerified: true } });
 
     return res.status(200).json({ message: 'OTP verified successfully' });
   } catch (error) {
@@ -72,7 +72,7 @@ const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await Pro.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -91,7 +91,7 @@ const resetPassword = async (req, res) => {
   try {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await User.updateOne({ email }, { $set: { password: hashedPassword } });
+    await Pro.updateOne({ email }, { $set: { password: hashedPassword } });
 
     return res.status(200).json({ message: 'Password reset successfully.' });
   } catch (error) {
@@ -104,27 +104,80 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
+    const pro = await Pro.findOne({ email });
+    if (!pro) {
       return res.status(400).json({ message: 'User not found' });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    const isPasswordCorrect = await bcrypt.compare(password, pro.password);
     if (!isPasswordCorrect) {
       return res.status(400).json({ message: 'Invalid password' });
     }
     
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: pro._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    if (!user.profileCreated || !user.isVerified) {
-      return res.status(200).json({ message: 'Login successful', profileCreated: user.profileCreated, isVerified: user.isVerified});
-    }
-
-    return res.status(200).json({ message: 'Login successful', profileCreated: user.profileCreated, isVerified: user.isVerified, token});
+    return res.status(200).json({ message: 'Login successful', profileCreated: pro.profileCreated, isVerified: pro.isVerified, token});
 
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong.', error });
   }
 };
 
-module.exports = { signup, verifyOtp, login, forgotPassword, resetPassword, sendOtpAPI };
+const createProfile = async (req, res) => {
+  const { profilePicture, name, serviceCategory, businessDetails, phoneNumber, address, postCode } = req.body;
+  const token = req.headers.authorization?.split(" ")[1]; // Assuming the token is passed in the Authorization header
+
+  try {
+    // Verify token
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    const proId = decodedToken.userId; // Extract the user ID from the token
+
+    // Update profile
+    const updatedPro = await Pro.findByIdAndUpdate(
+      proId,
+      {
+        picture: profilePicture,
+        name,
+        serviceCategory,
+        businessDetails,
+        phoneNumber,
+        address,
+        postCode,
+        profileCreated: true, // Mark profile as created
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedPro) {
+      return res.status(404).json({ message: "Pro not found" });
+    }
+
+    // Create a response object containing only the required fields
+    const response = {
+      id: updatedPro._id,
+      picture: updatedPro.picture,
+      name: updatedPro.name,
+      email: updatedPro.email,
+      profileCreated: updatedPro.profileCreated,
+    };
+
+    if(updatedPro.profileCreated)
+    {
+      return res.status(404).json({ message: "Profile already created", profile: response });
+    }
+
+    return res.status(200).json({
+      message: "Profile created successfully",
+      profile: response,
+    });
+  } catch (error) {
+    if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    return res.status(500).json({ message: "Something went wrong.", error });
+  }
+};
+
+
+
+module.exports = { signup, verifyOtp, login, forgotPassword, resetPassword, sendOtpAPI, createProfile };
