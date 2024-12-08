@@ -132,7 +132,26 @@ const createProfile = async (req, res) => {
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
     const proId = decodedToken.userId; // Extract the user ID from the token
 
-    // Update profile
+    // Find the existing profile
+    const existingPro = await Pro.findById(proId);
+    
+    if (!existingPro) {
+      return res.status(404).json({ message: "Pro not found" });
+    }
+
+    // Check if the profile is already created
+    if (existingPro.profileCreated) {
+      const response = {
+        id: existingPro._id,
+        picture: existingPro.picture,
+        name: existingPro.name,
+        email: existingPro.email,
+        profileCreated: existingPro.profileCreated,
+      };
+      return res.status(200).json({ message: "Profile already created", profile: response });
+    }
+
+    // Update profile with the provided details and mark it as created
     const updatedPro = await Pro.findByIdAndUpdate(
       proId,
       {
@@ -148,10 +167,6 @@ const createProfile = async (req, res) => {
       { new: true } // Return the updated document
     );
 
-    if (!updatedPro) {
-      return res.status(404).json({ message: "Pro not found" });
-    }
-
     // Create a response object containing only the required fields
     const response = {
       id: updatedPro._id,
@@ -161,15 +176,11 @@ const createProfile = async (req, res) => {
       profileCreated: updatedPro.profileCreated,
     };
 
-    if(updatedPro.profileCreated)
-    {
-      return res.status(404).json({ message: "Profile already created", profile: response });
-    }
-
     return res.status(200).json({
       message: "Profile created successfully",
       profile: response,
     });
+
   } catch (error) {
     if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
       return res.status(401).json({ message: "Invalid or expired token" });
@@ -177,7 +188,5 @@ const createProfile = async (req, res) => {
     return res.status(500).json({ message: "Something went wrong.", error });
   }
 };
-
-
 
 module.exports = { signup, verifyOtp, login, forgotPassword, resetPassword, sendOtpAPI, createProfile };
