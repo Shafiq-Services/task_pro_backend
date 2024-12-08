@@ -1,7 +1,7 @@
 const Pro = require('../models/pro');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { sendOtp, getOtp } = require('../utils/send_otp');  // Import the utility
+const { sendOtp, getOtp } = require('../utils/send_otp');
 
 // User Sign-Up
 const signup = async (req, res) => {
@@ -189,4 +189,30 @@ const createProfile = async (req, res) => {
   }
 };
 
-module.exports = { signup, verifyOtp, login, forgotPassword, resetPassword, sendOtpAPI, createProfile };
+
+// Get User Verification Status
+const getUserVerificationStatus = async (req, res) => {
+  const { email } = req.query;
+
+  try {
+    // Find the user by email
+    const pro = await Pro.findOne({ email });
+    if (!pro) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    // Return only the isVerified status
+    return res.status(200).json({
+      status: true,
+      message: 'User verification status retrieved successfully',
+      isVerified: pro.isVerified,
+    });
+
+  } catch (error) {
+    return res.status(500).json({       
+      status: false,
+      message: 'Something went wrong.', error });
+  }
+};
+
+module.exports = { signup, verifyOtp, login, forgotPassword, resetPassword, sendOtpAPI, createProfile, getUserVerificationStatus };

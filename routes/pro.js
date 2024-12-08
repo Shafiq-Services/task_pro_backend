@@ -25,4 +25,8 @@ router.use(proMiddleWare);
 
 // create-profile
 router.post('/create-profile', proController.createProfile);
+
+// create-profile
+router.get('/user-verified', proController.getUserVerificationStatus);
+
 module.exports = router;
